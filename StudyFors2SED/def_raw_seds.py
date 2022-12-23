@@ -316,6 +316,32 @@ class SED_jct(object):
       start=np.searchsorted(self.wave,bounds[0])
       stop=np.searchsorted(self.wave,bounds[1])
       return self.flux[start:stop].mean()
+    
+class SED_out_jct(object):
+  def __init__(self,id,label=""):
+      z,lines,ra,dec=get_catalog_info(id,cat)
+      filename=path_out_jct+'SPEC'+str(id)+'.txt'
+      self.d=np.loadtxt(filename, unpack=True)
+      if (float(z)!=-1) :
+        self.wave_tmp=self.d[0]/(1.+z)
+      else:
+        self.wave_tmp=self.d[0]*0.
+      self.flux_tmp=self.d[1]
+      self.mask=self.d[2]
+      id_mask=np.where(self.mask==0)
+      self.wave=self.wave_tmp[id_mask]
+      self.flux=self.flux_tmp[id_mask]      
+      self.label=label
+      self.z=z
+      self.lines=lines
+      self.ra=ra
+      self.dec=dec
+  def get_scale(self,bounds=(4150,4250)):
+      start=np.searchsorted(self.wave,bounds[0])
+      stop=np.searchsorted(self.wave,bounds[1])
+      return self.flux[start:stop].mean()
+    
+    
 
 class SED(object): #input SED to SL
   def __init__(self,filename,label=""):
