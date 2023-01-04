@@ -3,7 +3,7 @@
 - author : Sylvie Dagoret-Campagne
 - affiliation : IJCLab/IN2P3/CNRS
 - creation date : 2022-12-19
-- update : 2022-12-23
+- last update : 2023-01-04
 - purpose :Study Fors2
 
 
@@ -13,18 +13,20 @@
 
 ## ExploreFors2.ipynb 
 - first exploration of Fors2 spectra
+- must create must create ./fors2out/seds
 
 ## ExploreFors2_short.ipynb
-- fitst ecploration of Fors2 spectra with python script import
+- similar to ExploreFors2.ipynb, but using python script as the library
+- fitst exploration of Fors2 spectra with python script import
+- must create must create ./fors2out/seds
 
 ## ExploreFors2inRestFrame.ipynb 
 - build an astropy table
-- try to compare Fors2 spectra and StarLight spectra
-
+- Does nothing more
 
 ## ExploreFors2_comparespectra.ipynb
 - creation 2022/12/22
-- Compare the spectra one by one
+- Compare the spectra one by one, all together
 
 ## ExploreSL_comparespectra.ipynb
 - creation 2022/12/23
