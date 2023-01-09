@@ -20,7 +20,14 @@ PCA on SL Spectra
 
 
 ## ComputePCA_SL_PCAmethod1.ipynb 
-- Compute PCA method1 (the best method)
+- Compute PCA method1 (the best method)  for SL
+
+
+## ComputePCA_Brown_PCAmethod1.ipynb
+- Compute PCA method1 (the best method) for Brown
+
+## ComputePCA_BruzualCharlot_PCAmethod1.ipynb
+- Compute PCA method1 (the best method) for Bruzual Charlot
 
 ## ComputePCA_SL_PCAmethod2.ipynb  or ComputePCA_SL_PCAmethod2_v2.ipynb
 - Test method2, but not OK
