@@ -1,0 +1,17 @@
+2                                                [Number of fits to run]
+/home/nuss/Gam/LSST/photoZ/SL04/BasesDir/                        [base_dir]
+/home/nuss/Gam/LSST/photoZ/edmond_fors2/dataset_edmond/raw_SEDs/jct_redshifted/      [obs_dir]
+/home/nuss/Gam/LSST/photoZ/SL04/                                 [mask_dir]
+/home/nuss/Gam/LSST/photoZ/SL04/ext/fors2_raw_jct/BC03N/conf1/HZ4/output_sl/
+-2007200                                         [your phone number]
+4000.0                                           [llow_SN]   lower-lambda of S/N window
+4100.0                                           [lupp_SN]   upper-lambda of S/N window
+3955.0                                           [Olsyn_ini] lower-lambda for fit
+5857.0                                           [Olsyn_fin] upper-lambda for fit
+1.0                                              [Odlsyn]    delta-lambda for fit
+1.0                                              [fscale_chi2] fudge-factor for chi2
+FIT                                              [FIT/FXK] Fit or Fix kinematics
+0                                                [IsErrSpecAvailable]  1/0 = Yes/No
+0                                                [IsFlagSpecAvailable] 1/0 = Yes/No
+
+SPEC523.txt extended.config Base.BC03.N Mask.0414.51901.393.cxt.sc1.CRAP.gm.BN HZ4 0.0 150.0 SPEC523_HZ4.txt
