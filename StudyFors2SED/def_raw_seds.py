@@ -69,12 +69,12 @@ blue   =   ['SPEC722', 'SPEC191', 'SPEC480', 'SPEC643', 'SPEC297', 'SPEC160', 'S
 filename_fits_catalog='/home/joseph/PhotoZ_PhD/fors2/data/fors2_catalogue.fits'
 path_raw_jct='/home/joseph/PhotoZ_PhD/fors2/seds/'
 cat = fits.open(filename_fits_catalog)[1]
-sl_path='/home/joseph/WIP_FORS2/PhotoZ_PhD/StudyFors2SED/sl04/'
+sl_path='/home/joseph/PhotoZ_PhD/StudyFors2SED/sl04/'
 #sl_path='/home/enuss/00_labo/lsst/photoz/sl04/'
 #path_ana='/home/enuss/00_labo/lsst/photoz/edmond_fors2/'
-path_ana="/home/joseph/WIP_FORS2/PhotoZ_PhD/StudyFors2SED"
+path_ana="/home/joseph/PhotoZ_PhD/StudyFors2SED"
 #path_out_jct='/home/enuss/00_labo/lsst/photoz/edmond_fors2/dataset_edmond/raw_SEDs/jct_redshifted/' #jct raw dat in SL format
-path_out_jct='/home/joseph/WIP_FORS2/PhotoZ_PhD/StudyFors2SED/fors2out/seds/'
+path_out_jct='/home/joseph/PhotoZ_PhD/StudyFors2SED/fors2out/seds/'
 
 
 os.environ["EXT_LAW"] = 'HZ4' #prevot
@@ -94,7 +94,8 @@ config_tag =os.environ['CONFIG_TAG']
 
 #
 #
-sl_path = "/home/joseph/WIP_FORS2/FORS2"
+#sl_path = "/home/joseph/WIP_FORS2/FORS2"
+sl_path = "/home/joseph/PhotoZ_PhD"
 #ana_path=sl_path+'ext/'+ana_type+'/'+base_tag+'/'+config_tag+'/'+ext+'/'
 ana_path=sl_path+'/'+ana_type+'/'+base_tag+'/'+config_tag+'/'+ext+'/'
 ext_path=ana_path+'/extended_spectra/'
