@@ -3,7 +3,7 @@
 - author : Sylvie Dagoret-Campagne
 - affiliation : IJCLab/IN2P3/CNRS
 - creation date : 2022-12-19
-- last update : 2023-01-04
+- last update : 2023-03-20
 - purpose :Study Fors2
 
 
@@ -13,12 +13,14 @@
 
 ## ExploreFors2.ipynb 
 - first exploration of Fors2 spectra
-- must create must create ./fors2out/seds
+- mandatory to run this notebook first in order to create seds file in ./fors2out/seds (or use short version below)
+- don't forget to create the output directory StudyFors2SED/fors2out/seds before running
 
 ## ExploreFors2_short.ipynb
 - similar to ExploreFors2.ipynb, but using python script as the library
 - fitst exploration of Fors2 spectra with python script import
-- must create must create ./fors2out/seds
+- mandatory to run this notebook first in order to create seds file in ./fors2out/seds of used version above
+- don't forget to create the output directory StudyFors2SED/fors2out/seds before running
 
 ## ExploreFors2inRestFrame.ipynb 
 - build an astropy table
@@ -36,3 +38,10 @@
 - view spectra one by one , including emission lines
 - creation 2022/12/23
 
+
+## ExploreFors2_viewspectra1by1_CompareSL.ipynb
+- Compare SL spectra with FORS2 spectra redshifted at z=0
+
+
+## ExploreFors2_viewspectra1by1_CompareSL_t.ipynb
+- Compare SL spectra with FORS2 spectra redshifted at z=0
