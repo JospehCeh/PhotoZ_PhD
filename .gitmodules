@@ -7,11 +7,9 @@
 [submodule "fors2"]
 	path = fors2
 	url = git@github.com:ericnuss/fors2.git
-	branch = u/joseph
 [submodule "lephare_cosmos"]
 	path = lephare_cosmos
 	url = git@github.com:JospehCeh/lephare_cosmos.git
-	branch = u/joseph
 [submodule "EmuLP"]
 	path = EmuLP
 	url = git@github.com:JospehCeh/EmuLP.git
