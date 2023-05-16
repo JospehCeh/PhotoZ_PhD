@@ -12,3 +12,6 @@
 	path = lephare_cosmos
 	url = git@github.com:JospehCeh/lephare_cosmos.git
 	branch = u/joseph
+[submodule "EmuLP"]
+	path = EmuLP
+	url = git@github.com:JospehCeh/EmuLP.git
