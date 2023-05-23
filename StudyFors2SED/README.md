@@ -3,7 +3,7 @@
 - author : Sylvie Dagoret-Campagne
 - affiliation : IJCLab/IN2P3/CNRS
 - creation date : 2022-12-19
-- last update : 2023-03-20
+- last update : 2023-05-23
 - purpose :Study Fors2
 
 
@@ -45,3 +45,21 @@
 
 ## ExploreFors2_viewspectra1by1_CompareSL_t.ipynb
 - Compare SL spectra with FORS2 spectra redshifted at z=0
+
+
+
+# preparation of spectrum synthesis
+
+## ExploreFors2inOriginalFrame.ipynb
+- prepare to use restframe unredshifted spectra (original spectra) and extract raw spectra inside a local dir ./raw
+
+## ExploreFors2_viewspectra1by1_raw_sdc.ipynb
+- View restframe unrestshifted spectra (original spectra)
+
+## convertSLspectratohdf5.ipynb
+- Convert SL spectra in h2 file (same in DeepLearning dir )
+
+
+## convertFors2spectratohdf5.ipynb 
+- Convert Fors2 (original unredshifted spectra) in h2 file 
+
