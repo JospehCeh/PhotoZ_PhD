@@ -60,6 +60,6 @@
 - Convert SL spectra in h2 file (same in DeepLearning dir )
 
 
-## convertFors2spectratohdf5.ipynb (Under dev)
+## convertFors2spectratohdf5.ipynb 
 - Convert Fors2 (original unredshifted spectra) in h2 file 
 
