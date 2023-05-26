@@ -90,12 +90,12 @@ blue   =   ['SPEC722', 'SPEC191', 'SPEC480', 'SPEC643', 'SPEC297', 'SPEC160', 'S
 #path_rootoutdir = "/Volumes/Backup2020/MacOSX/GitHub/LSST/PhotoZ_PhD/StudyFors2SED"
 
 # mac laptop
-#path_rootdir ="/Users/dagoret/MacOSX/GitHub/LSST/fors2"
-#path_rootoutdir = "/Users/dagoret/MacOSX/GitHub/LSST/PhotoZ_PhD/StudyFors2SED"
+path_rootdir ="/Users/dagoret/MacOSX/GitHub/LSST/fors2"
+path_rootoutdir = "/Users/dagoret/MacOSX/GitHub/LSST/PhotoZ_PhD/StudyFors2SED"
 
 # emac lab
-path_rootdir = "/Users/sylvie/MacOSX/GitHub/LSST/FORS2"
-path_rootoutdir = "/Users/sylvie/MacOSX/GitHub/LSST/PhotoZ_PhD/StudyFors2SED"
+#path_rootdir = "/Users/sylvie/MacOSX/GitHub/LSST/FORS2"
+#path_rootoutdir = "/Users/sylvie/MacOSX/GitHub/LSST/PhotoZ_PhD/StudyFors2SED"
 
 
 #keep relative paths
