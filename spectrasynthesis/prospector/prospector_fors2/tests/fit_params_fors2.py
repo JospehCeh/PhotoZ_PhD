@@ -1,12 +1,110 @@
 import time, sys
-
+import os
 import numpy as np
+import pandas as pd
 from sedpy.observate import load_filters
 
 from prospect import prospect_args
 from prospect.fitting import fit_model
 from prospect.io import write_results as writer
 
+from collections import OrderedDict
+import re
+import h5py
+from sklearn.gaussian_process import GaussianProcessRegressor, kernels
+
+# ---------------
+ordered_keys = ['name','num','ra','dec', 'redshift','Rmag','RT', 'RV','eRV','Nsp','lines',
+                'ra_galex','dec_galex','fuv_mag', 'fuv_magerr','nuv_mag', 'nuv_magerr', 
+                'fuv_flux', 'fuv_fluxerr','nuv_flux', 'nuv_fluxerr','asep_galex',
+                'ID', 'KIDS_TILE','RAJ2000','DECJ2000','Z_ML', 'Z_B','asep_kids','CLASS_STAR',
+                'MAG_GAAP_u','MAG_GAAP_g','MAG_GAAP_r','MAG_GAAP_i','MAG_GAAP_Z','MAG_GAAP_Y','MAG_GAAP_J', 'MAG_GAAP_H','MAG_GAAP_Ks',
+                'MAGERR_GAAP_u','MAGERR_GAAP_g','MAGERR_GAAP_r','MAGERR_GAAP_i','MAGERR_GAAP_Z','MAGERR_GAAP_Y','MAGERR_GAAP_J','MAGERR_GAAP_H','MAGERR_GAAP_Ks',
+                'FLUX_GAAP_u','FLUX_GAAP_g','FLUX_GAAP_r','FLUX_GAAP_i','FLUX_GAAP_Z','FLUX_GAAP_Y','FLUX_GAAP_J', 'FLUX_GAAP_H','FLUX_GAAP_Ks',
+                'FLUXERR_GAAP_u','FLUXERR_GAAP_g','FLUXERR_GAAP_r','FLUXERR_GAAP_i','FLUXERR_GAAP_Z','FLUXERR_GAAP_Y','FLUXERR_GAAP_J','FLUXERR_GAAP_H','FLUXERR_GAAP_Ks',
+                'FLUX_RADIUS', 'EXTINCTION_u','EXTINCTION_g','EXTINCTION_r', 'EXTINCTION_i',]
+
+#---------------
+class Fors2DataAcess(object):
+    def __init__(self,filename):
+        if os.path.isfile(filename):
+            self.hf = h5py.File(filename, 'r')
+            self.list_of_groupkeys = list(self.hf.keys())      
+             # pick one key    
+            key_sel =  self.list_of_groupkeys[0]
+            # pick one group
+            group = self.hf.get(key_sel)  
+            #pickup all attribute names
+            self.list_of_subgroup_keys = []
+            for k in group.attrs.keys():
+                self.list_of_subgroup_keys.append(k)
+        else:
+            self.hf = None
+            self.list_of_groupkeys = []
+            self.list_of_subgroup_keys = []
+    def close_file(self):
+        self.hf.close() 
+        
+    def get_list_of_groupkeys(self):
+        return self.list_of_groupkeys 
+    def get_list_subgroup_keys(self):
+        return self.list_of_subgroup_keys
+    def getattribdata_fromgroup(self,groupname):
+        attr_dict = OrderedDict()
+        if groupname in self.list_of_groupkeys:       
+            group = self.hf.get(groupname)  
+            for  nameval in self.list_of_subgroup_keys:
+                attr_dict[nameval] = group.attrs[nameval]
+        else:
+            print(f'getattribdata_fromgroup : No group {groupname}')
+        return attr_dict
+    def getspectrum_fromgroup(self,groupname):
+        spec_dict = {}
+        if groupname in self.list_of_groupkeys:       
+            group = self.hf.get(groupname)  
+            wl = np.array(group.get("wl"))
+            fl = np.array(group.get("fl")) 
+            spec_dict["wl"] = wl
+            spec_dict["fl"] = fl
+        else:
+            print(f'getspectrum_fromgroup : No group {groupname}')
+        return spec_dict
+    
+    #kernel = kernels.RBF(0.5, (8000, 10000.0))
+    #gp = GaussianProcessRegressor(kernel=kernel ,random_state=0)
+
+    def getspectrumcleanedemissionlines_fromgroup(self,groupname,gp,nsigs=8):
+        spec_dict = {}
+        if groupname in self.list_of_groupkeys:       
+            group = self.hf.get(groupname)  
+            wl = np.array(group.get("wl"))
+            fl = np.array(group.get("fl")) 
+            # fit gaussian pricess 
+            X = wl
+            Y = fl
+            
+            DeltaY = Y - gp.predict(X[:, None], return_std=False)
+            background = np.sqrt(np.median(DeltaY**2))
+            indexes_toremove = np.where(np.abs(DeltaY)> nsigs * background)[0]
+            
+            Xclean = np.delete(X,indexes_toremove)
+            Yclean  = np.delete(Y,indexes_toremove)
+            
+            spec_dict["wl"] = Xclean
+            spec_dict["fl"] = Yclean
+
+            #remove negatives
+            bad_indexes = np.where(Yclean<=0)[0]
+            spec_dict["wl"] = np.delete(Xclean,  bad_indexes)
+            spec_dict["fl"] = np.delete(Yclean,  bad_indexes)
+            
+        else:
+            print(f'getspectrum_fromgroup : No group {groupname}')
+        return spec_dict
+        
+        
+           
+         
 
 # --------------
 # RUN_PARAMS
@@ -144,10 +242,12 @@ def build_model(object_redshift=0.0, fixed_metallicity=None, add_duste=False,
 # --------------
 
 # Here we are going to put together some filter names
+
+
 galex = ['galex_FUV', 'galex_NUV']
-spitzer = ['spitzer_irac_ch'+n for n in '1234']
-bessell = ['bessell_'+n for n in 'UBVRI']
-sdss = ['sdss_{0}0'.format(b) for b in 'ugriz']
+vista = ['vista_vircam_'+n for n in ['Z','J','H','Ks']]
+sdss = ['sdss_{0}0'.format(b) for b in ['u','g','r','i']]
+filternames = galex + sdss + vista
 
 # The first filter set is Johnson/Cousins, the second is SDSS. We will use a
 # flag in the photometry table to tell us which set to use for each object
@@ -157,8 +257,7 @@ sdss = ['sdss_{0}0'.format(b) for b in 'ugriz']
 # All these filters are available in sedpy.  If you want to use other filters,
 # add their transmission profiles to sedpy/sedpy/data/filters/ with appropriate
 # names (and format)
-filtersets = (galex + bessell + spitzer,
-              galex + sdss + spitzer)
+filtersets = (galex +  sdss + vista)
 
 
 def build_obs(objid=0, phottable='demo_photometry.dat',
@@ -263,8 +362,12 @@ def build_all(**kwargs):
     return (build_obs(**kwargs), build_model(**kwargs),
             build_sps(**kwargs), build_noise(**kwargs))
 
+input_file_h5  = '../../../../QueryCatalogs/data/FORS2spectraGalexKidsPhotom.hdf5'
 
 if __name__ == '__main__':
+
+
+    print("START MAIN")
 
     # - Parser with default arguments -
     parser = prospect_args.get_parser()
@@ -275,16 +378,60 @@ if __name__ == '__main__':
                         help="If set, add nebular emission in the model (and mock).")
     parser.add_argument('--add_duste', action="store_true",
                         help="If set, add dust emission to the model.")
-    parser.add_argument('--luminosity_distance', type=float, default=1e-5,
-                        help=("Luminosity distance in Mpc. Defaults to 10pc "
-                              "(for case of absolute mags)"))
-    parser.add_argument('--phottable', type=str, default="demo_photometry.dat",
-                        help="Names of table from which to get photometry.")
+    parser.add_argument('--inputfile', type=str, default="FORS2spectraGalexKidsPhotom.hdf5",
+                        help="file containing photometry and spectroscopy for Fors2 objects.")
     parser.add_argument('--objid', type=int, default=0,
-                        help="zero-index row number in the table to fit.")
+                        help="Object identifier number.")
+    parser.add_argument('--datamode', type=str, default="photom",
+                        help="type of data to fit : mode = photom/spectrophotom/spectro")
 
     args = parser.parse_args()
+    print("args = ",args)
+
+    object_number = int(args.objid)
+
+    #retrieve the object number
+    selected_key = f'SPEC{object_number}'
+
+    input_file_h5 = args.inputfile
+
+    if not os.path.isfile(input_file_h5):
+        print(f"File not found {input_file_h5}")
+        sys.exit(-1)
+
+    if args.datamode not in ['photom','spectrophotom','spectro']:
+        print(f"Bad datamode {args.datamode}")
+        sys.exit(-1)
+
+     #decode
+    fors2 = Fors2DataAcess(input_file_h5)
+    list_of_keys = fors2.get_list_of_groupkeys()
+    list_of_attributes = fors2.get_list_subgroup_keys()
+    list_of_keys = np.array(list_of_keys)
+    list_of_keysnum = [ int(re.findall("SPEC(.*)",specname)[0]) for specname in  list_of_keys ]
+    sorted_indexes = np.argsort(list_of_keysnum)
+    list_of_keys = list_of_keys[sorted_indexes]    
+
+    if selected_key in list_of_keys:
+        print(f"Object {selected_key} found in file {input_file_h5}")
+
+
+    kernel = kernels.RBF(0.5, (8000, 10000.0))
+    gp = GaussianProcessRegressor(kernel=kernel ,random_state=0)
+
+    attrs = fors2.getattribdata_fromgroup(selected_key)
+    spectr = fors2.getspectrumcleanedemissionlines_fromgroup(selected_key,gp,nsigs=3.)
+    df_info = pd.DataFrame(columns=list_of_attributes)
+    df_info.loc[0] = [*attrs.values()] # hope the order of attributes is kept
+
+    print(df_info)
+    
     run_params = vars(args)
+
+    print(run_params)
+    
+    sys.exit()
+    
     obs, model, sps, noise = build_all(**run_params)
 
     run_params["sps_libraries"] = sps.ssp.libraries
@@ -295,9 +442,14 @@ if __name__ == '__main__':
     if args.debug:
         sys.exit()
 
+   
     #hfile = setup_h5(model=model, obs=obs, **run_params)
     ts = time.strftime("%y%b%d-%H.%M", time.localtime())
     hfile = "{0}_{1}_result.h5".format(args.outfile, ts)
+
+
+    print(f"Outputfile {hfile}")
+    sys.exit()
 
     output = fit_model(obs, model, sps, noise, **run_params)
 
