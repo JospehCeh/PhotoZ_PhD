@@ -325,7 +325,9 @@ def build_obs(**kwargs):
     gp = GaussianProcessRegressor(kernel=kernel ,random_state=0)
 
     attrs = fors2.getattribdata_fromgroup(object_name)
-    spectr = fors2.getspectrumcleanedemissionlines_fromgroup(object_name,gp,nsigs=args.specnsigs)
+    spectr = fors2.getspectrumcleanedemissionlines_fromgroup(object_name,gp,nsigs=nsigs_spec)
+    
+    print("build_obs"::,spectr)
     
     
     #decode photom
@@ -393,12 +395,22 @@ def build_obs(**kwargs):
     
     if inputdatamode == "spectrophotom":
         #fills obs
-        obs['wavelength'] = spectr["wl"],
+        obs['wavelength'] = spectr["wl"]
+        
+        print("build_obs:: obs_wavelength = ",obs['wavelength'])
+        
+        flambda = spectr["fl"]
+        fnu = flambda*spectr["wl"]**2/3e8*4.15  # convert into maggies : Janskies divided by 3631
+        
         obs['spectrum'] = spectr["fl"]*spectr["wl"]**2/3e8*4.15  # not sure at all of which flabda or fnu or lambda flambda
+        
         obs['unc'] = spectr["bg"]*spectr["wl"]**2/3e8*4.15 
         # (again, to ignore a particular wavelength set the value of the 
         #  corresponding element of the mask to *False*)
+       
         obs['mask'] = np.array(np.ones(len(obs['wavelength']), dtype=bool))
+        
+        
 
     # Add unessential bonus info.  This will be stored in output
     #obs['dmod'] = catalog[ind]['dmod']

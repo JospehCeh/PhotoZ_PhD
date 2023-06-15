@@ -2,7 +2,7 @@
 
 #conda activate prospector
 
-python fit_params_fors2.py --inputfile ../../../../QueryCatalogs/data/FORS2spectraGalexKidsPhotom.hdf5 --objid 214 --datamode spectrohotom \
+python fit_params_fors2.py --inputfile ../../../../QueryCatalogs/data/FORS2spectraGalexKidsPhotom.hdf5 --objid 214 --datamode spectrophotom \
 --optimize \
 --outfile=run_optimize
 
