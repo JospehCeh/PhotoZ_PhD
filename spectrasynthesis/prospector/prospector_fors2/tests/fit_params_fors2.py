@@ -42,8 +42,13 @@ class Fors2DataAcess(object):
             self.hf = None
             self.list_of_groupkeys = []
             self.list_of_subgroup_keys = []
+            
+        self.background = 0
+        
     def close_file(self):
         self.hf.close() 
+    def get_background(self):
+        return self.background 
         
     def get_list_of_groupkeys(self):
         return self.list_of_groupkeys 
@@ -85,18 +90,28 @@ class Fors2DataAcess(object):
             
             DeltaY = Y - gp.predict(X[:, None], return_std=False)
             background = np.sqrt(np.median(DeltaY**2))
+            self.background = background
+            
+            
+            Z = np.where(np.abs(DeltaY)<background,np.abs(DeltaY),background)
+            
+            
+            
             indexes_toremove = np.where(np.abs(DeltaY)> nsigs * background)[0]
             
             Xclean = np.delete(X,indexes_toremove)
             Yclean  = np.delete(Y,indexes_toremove)
+            Zclean  = np.delete(Z,indexes_toremove)
             
             spec_dict["wl"] = Xclean
             spec_dict["fl"] = Yclean
+            spec_dict["bg"] = Zclean
 
             #remove negatives
             bad_indexes = np.where(Yclean<=0)[0]
             spec_dict["wl"] = np.delete(Xclean,  bad_indexes)
             spec_dict["fl"] = np.delete(Yclean,  bad_indexes)
+            spec_dict["bg"] = np.delete(Zclean,  bad_indexes)
             
         else:
             print(f'getspectrum_fromgroup : No group {groupname}')
@@ -137,8 +152,6 @@ run_params = {'verbose': True,
               'nested_target_n_effective': 10000,
               # Obs data parameters
               'objid': 0,
-              'phottable': 'demo_photometry.dat',
-              'luminosity_distance': 1e-5,  # in Mpc
               # Model parameters
               'add_neb': False,
               'add_duste': False,
@@ -174,6 +187,14 @@ def build_model(object_redshift=0.0, fixed_metallicity=None, add_duste=False,
     """
     from prospect.models.templates import TemplateLibrary
     from prospect.models import priors, sedmodel
+    
+    
+    #if object_redshift == 0.0 and "object_redshift" in extras.keys():
+    #    object_redshift =  extras["object_redshift"]
+    #    object_name = extras["object_name"]
+    #    print(f"build_model : found redshift for object {object_name} : z = {object_redshift}")
+    #else:
+    #    print(f"build_model : NO redshift FOUND for object")
 
     # --- Get a basic delay-tau SFH parameter set. ---
     # This has 5 free parameters:
@@ -257,60 +278,79 @@ filternames = galex + sdss + vista
 # All these filters are available in sedpy.  If you want to use other filters,
 # add their transmission profiles to sedpy/sedpy/data/filters/ with appropriate
 # names (and format)
+
 filtersets = (galex +  sdss + vista)
 
 
-def build_obs(objid=0, phottable='demo_photometry.dat',
-              luminosity_distance=None, **kwargs):
-    """Load photometry from an ascii file.  Assumes the following columns:
-    `objid`, `filterset`, [`mag0`,....,`magN`] where N >= 11.  The User should
-    modify this function (including adding keyword arguments) to read in their
-    particular data format and put it in the required dictionary.
-
-    :param objid:
-        The object id for the row of the photomotery file to use.  Integer.
-        Requires that there be an `objid` column in the ascii file.
-
-    :param phottable:
-        Name (and path) of the ascii file containing the photometry.
-
-    :param luminosity_distance: (optional)
-        The Johnson 2013 data are given as AB absolute magnitudes.  They can be
-        turned into apparent magnitudes by supplying a luminosity distance.
+def build_obs(**kwargs):
+    """Load photometry from inputfile. 
+    
 
     :returns obs:
         Dictionary of observational data.
     """
-    # Writes your code here to read data.  Can use FITS, h5py, astropy.table,
-    # sqlite, whatever.
-    # e.g.:
-    # import astropy.io.fits as pyfits
-    # catalog = pyfits.getdata(phottable)
+    
+    run_params = kwargs
+    print(run_params)
+    
+    
+    ## add info to run_params
+    object_number = run_params["object_number"] 
+    objid = run_params["objid"] 
+    assert object_number == objid
+    object_name = run_params["object_name"] 
+    object_redshift = run_params["object_redshift"]
+   
+    input_file_h5 = run_params["input_file"] 
+    inputdatamode = run_params["datamode"]
+    nsigs_spec  = run_params["specnsig"] 
+    
+    
+    ## read input h5 file
+    fors2 = Fors2DataAcess(input_file_h5)
+    list_of_keys = fors2.get_list_of_groupkeys()
+    list_of_attributes = fors2.get_list_subgroup_keys()
+    list_of_keys = np.array(list_of_keys)
+    list_of_keysnum = [ int(re.findall("SPEC(.*)",specname)[0]) for specname in  list_of_keys ]
+    sorted_indexes = np.argsort(list_of_keysnum)
+    list_of_keys = list_of_keys[sorted_indexes]    
 
+    if object_name in list_of_keys:
+        print(f"build_obs : Object {object_name} found in file {input_file_h5}")
+    else:
+        print(f"build_obs : Object {object_name} NOT FOUND in file {input_file_h5}")
+
+
+    kernel = kernels.RBF(0.5, (8000, 10000.0))
+    gp = GaussianProcessRegressor(kernel=kernel ,random_state=0)
+
+    attrs = fors2.getattribdata_fromgroup(object_name)
+    spectr = fors2.getspectrumcleanedemissionlines_fromgroup(object_name,gp,nsigs=args.specnsigs)
+    
+    
+    #decode photom
+    mags = np.array([attrs['fuv_mag'], attrs['nuv_mag'],
+                     attrs['MAG_GAAP_u'],attrs['MAG_GAAP_g'],attrs['MAG_GAAP_r'],attrs['MAG_GAAP_i'],
+                     attrs['MAG_GAAP_Z'],attrs['MAG_GAAP_J'],attrs['MAG_GAAP_H'],attrs['MAG_GAAP_Ks']])
+    merr = np.array([attrs['fuv_magerr'], attrs['nuv_magerr'],
+                     attrs['MAGERR_GAAP_u'],attrs['MAGERR_GAAP_g'],attrs['MAGERR_GAAP_r'],attrs['MAGERR_GAAP_i'],
+                     attrs['MAGERR_GAAP_Z'],attrs['MAGERR_GAAP_J'],attrs['MAGERR_GAAP_H'],attrs['MAGERR_GAAP_Ks']])       
+    
+    
+    df_info = pd.DataFrame(columns=list_of_attributes)
+    df_info.loc[0] = [*attrs.values()] # hope the order of attributes is kept
+    df_info = df_info[ordered_keys]
+    fors2.close_file()
+    
+    
+    
+    # Now start to build OBS
     from prospect.utils.obsutils import fix_obs
 
-    # Here we will read in an ascii catalog of magnitudes as a numpy structured
-    # array
-    with open(phottable, 'r') as f:
-        # drop the comment hash
-        header = f.readline().split()[1:]
-    catalog = np.genfromtxt(phottable, comments='#',
-                            dtype=np.dtype([(n, float) for n in header]))
-
-    # Find the right row
-    ind = catalog['objid'] == float(objid)
-    # Here we are dynamically choosing which filters to use based on the object
-    # and a flag in the catalog.  Feel free to make this logic more (or less)
-    # complicated.
-    filternames = filtersets[int(catalog[ind]['filterset'])]
-    # And here we loop over the magnitude columns
-    mags = [catalog[ind]['mag{}'.format(i)] for i in range(len(filternames))]
-    mags = np.array(mags)
-    # And since these are absolute mags, we can shift to any distance.
-    if luminosity_distance is not None:
-        dm = 25 + 5 * np.log10(luminosity_distance)
-        mags += dm
-
+    
+    
+    
+    
     # Build output dictionary.
     obs = {}
     # This is a list of sedpy filter objects.    See the
@@ -320,19 +360,59 @@ def build_obs(objid=0, phottable='demo_photometry.dat',
     # order as `filters` above.
     obs['maggies'] = np.squeeze(10**(-mags/2.5))
     # HACK.  You should use real flux uncertainties
-    obs['maggies_unc'] = obs['maggies'] * 0.07
+    obs['maggies_unc'] = obs['maggies'] * np.log(10)/2.5 * merr 
     # Here we mask out any NaNs or infs
+    
     obs['phot_mask'] = np.isfinite(np.squeeze(mags))
-    # We have no spectrum.
-    obs['wavelength'] = None
-    obs['spectrum'] = None
+    
+    # Now we need a mask, which says which flux values to consider in the likelihood.
+    # IMPORTANT: the mask is *True* for values that you *want* to fit, 
+    # and *False* for values you want to ignore.  Here we ignore the spitzer bands.
+    obs["phot_mask"] = np.array([ ~np.isnan(f) for f in obs["maggies"]])
+
+    # This is an array of effective wavelengths for each of the filters.  
+    # It is not necessary, but it can be useful for plotting so we store it here as a convenience
+    obs["phot_wave"] = np.array([f.wave_effective for f in obs["filters"]])
+    
+    
+    
+
+    # We do not have a spectrum, so we set some required elements of the obs dictionary to None.
+    # (this would be a vector of vacuum wavelengths in angstroms)
+    obs["wavelength"] = None
+    # (this would be the spectrum in units of maggies)
+    obs["spectrum"] = None
+    # (spectral uncertainties are given here)
+    obs['unc'] = None
+    # (again, to ignore a particular wavelength set the value of the 
+    #  corresponding elemnt of the mask to *False*)
+    obs['mask'] = None
+
+    
+    
+    
+    if inputdatamode == "spectrophotom":
+        #fills obs
+        obs['wavelength'] = spectr["wl"],
+        obs['spectrum'] = spectr["fl"]*spectr["wl"]**2/3e8*4.15  # not sure at all of which flabda or fnu or lambda flambda
+        obs['unc'] = spectr["bg"]*spectr["wl"]**2/3e8*4.15 
+        # (again, to ignore a particular wavelength set the value of the 
+        #  corresponding element of the mask to *False*)
+        obs['mask'] = np.array(np.ones(len(obs['wavelength']), dtype=bool))
 
     # Add unessential bonus info.  This will be stored in output
     #obs['dmod'] = catalog[ind]['dmod']
     obs['objid'] = objid
 
     # This ensures all required keys are present and adds some extra useful info
-    obs = fix_obs(obs)
+    if inputdatamode == "photom":
+        obs = fix_obs(obs)
+    elif inputdatamode == "spectrophotom":
+        obs = fix_obs(obs,normalize_spectrum = True,norm_band_name='sdss_r0')
+    else:
+        print(f" build_obs : STOP because data mode {inputdatamode} neigher tested not implemented")
+        sys.exit(-1)
+        
 
     return obs
 
@@ -384,6 +464,8 @@ if __name__ == '__main__':
                         help="Object identifier number.")
     parser.add_argument('--datamode', type=str, default="photom",
                         help="type of data to fit : mode = photom/spectrophotom/spectro")
+    parser.add_argument('--specnsigs', type=float, default=3.0,
+                        help="Number of sigmas above which to remove emission lines.")
 
     args = parser.parse_args()
     print("args = ",args)
@@ -391,7 +473,7 @@ if __name__ == '__main__':
     object_number = int(args.objid)
 
     #retrieve the object number
-    selected_key = f'SPEC{object_number}'
+    object_name = f'SPEC{object_number}'
 
     input_file_h5 = args.inputfile
 
@@ -412,25 +494,39 @@ if __name__ == '__main__':
     sorted_indexes = np.argsort(list_of_keysnum)
     list_of_keys = list_of_keys[sorted_indexes]    
 
-    if selected_key in list_of_keys:
-        print(f"Object {selected_key} found in file {input_file_h5}")
+    if object_name in list_of_keys:
+        print(f"Object {object_name} found in file {input_file_h5}")
 
 
     kernel = kernels.RBF(0.5, (8000, 10000.0))
     gp = GaussianProcessRegressor(kernel=kernel ,random_state=0)
 
-    attrs = fors2.getattribdata_fromgroup(selected_key)
-    spectr = fors2.getspectrumcleanedemissionlines_fromgroup(selected_key,gp,nsigs=3.)
+    attrs = fors2.getattribdata_fromgroup(object_name)
+    spectr = fors2.getspectrumcleanedemissionlines_fromgroup(object_name,gp,nsigs=args.specnsigs)
     df_info = pd.DataFrame(columns=list_of_attributes)
     df_info.loc[0] = [*attrs.values()] # hope the order of attributes is kept
-
+    df_info = df_info[ordered_keys]
+    fors2.close_file()
+    
     print(df_info)
     
-    run_params = vars(args)
-
-    print(run_params)
+    print(spectr)
     
-    sys.exit()
+    
+    
+    run_params = vars(args)
+    
+    ## add info to run_params
+    run_params["object_number"] = object_number
+    run_params["object_name"] = object_name
+    run_params["object_redshift"] = df_info.iloc[0]["redshift"]
+    # input file:
+    run_params["input_file"] =  input_file_h5
+    run_params["datamode"] = args.datamode
+    run_params["specnsig"] = args.specnsigs
+    
+
+    
     
     obs, model, sps, noise = build_all(**run_params)
 
@@ -445,11 +541,13 @@ if __name__ == '__main__':
    
     #hfile = setup_h5(model=model, obs=obs, **run_params)
     ts = time.strftime("%y%b%d-%H.%M", time.localtime())
-    hfile = "{0}_{1}_result.h5".format(args.outfile, ts)
+    hfile = "{0}_{1}_{2}_{3}_result.h5".format(args.outfile,object_name,args.datamode, ts)
 
 
-    print(f"Outputfile {hfile}")
-    sys.exit()
+    print(f"Outputfile : {hfile}")
+   
+
+    print("Start to fit !!!!")
 
     output = fit_model(obs, model, sps, noise, **run_params)
 
