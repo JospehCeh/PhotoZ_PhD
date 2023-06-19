@@ -363,7 +363,7 @@ def build_obs(**kwargs):
     attrs = fors2.getattribdata_fromgroup(object_name)
     spectr = fors2.getspectrumcleanedemissionlines_fromgroup(object_name,gp,nsigs=nsigs_spec)
     
-    print("build_obs"::,spectr)
+    print("build_obs:: spectr = ",spectr)
     
     
     #decode photom
