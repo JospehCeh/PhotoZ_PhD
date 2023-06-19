@@ -457,7 +457,8 @@ def build_obs(**kwargs):
     if inputdatamode == "photom":
         obs = fix_obs(obs)
     elif inputdatamode == "spectrophotom":
-        obs = fix_obs(obs,normalize_spectrum = True,norm_band_name='sdss_r0')
+        #obs = fix_obs(obs,normalize_spectrum = True,norm_band_name='sdss_r0')
+        obs = fix_obs(obs)
     else:
         print(f" build_obs : STOP because data mode {inputdatamode} neigher tested not implemented")
         sys.exit(-1)
