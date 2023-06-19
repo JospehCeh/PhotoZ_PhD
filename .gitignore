@@ -1,1 +1,3 @@
 lephare_work_test/
+*.ipynb_checkpoints*
+
