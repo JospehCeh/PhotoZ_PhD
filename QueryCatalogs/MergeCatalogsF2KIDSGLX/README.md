@@ -3,7 +3,7 @@
 - author : Sylvie Dagoret-Campagne
 - affiliation : IJCLab/IN2P3/CNRS
 - creation date : 2023-06-09
-- last update : 2023-06-15
+- last update : 2023-06-19
 
 
 This directory is dedicated to merge FORS2/Photometry/ Starlight information.
@@ -28,7 +28,11 @@ In addition it helps in extracting relevant information for prospector, ie spect
 
 - **DevelopAccessLibrary.ipynb** : Start to implement a utility class to be used by prospector 
 
-- **ExtinctionOfEmissionLines.ipynb** :  Utility class to remove emission lines
+- **ExtinctionOfEmissionLines.ipynb** :  Utility class to remove emission lines (deprecated because canot compare both fluxes)
+
+- **ExtinctionOfEmissionLines_v2.ipynb** :  Utility class to remove emission lines (deprecated, because canot compare both fluxes)
+  
+- **ExtinctionOfEmissionLines_v3.ipynb** :  Utility class to remove emission lines with Fnu (Must use)
 
 
 
