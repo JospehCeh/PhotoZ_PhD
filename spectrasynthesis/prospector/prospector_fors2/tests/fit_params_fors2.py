@@ -13,6 +13,11 @@ import re
 import h5py
 from sklearn.gaussian_process import GaussianProcessRegressor, kernels
 
+from astropy import units as u
+from astropy import constants as const
+U_FNU = u.def_unit(u'fnu',  u.erg / (u.cm**2 * u.s * u.Hz))
+U_FL = u.def_unit(u'fl',  u.erg / (u.cm**2 * u.s * u.AA))
+
 # ---------------
 ordered_keys = ['name','num','ra','dec', 'redshift','Rmag','RT', 'RV','eRV','Nsp','lines',
                 'ra_galex','dec_galex','fuv_mag', 'fuv_magerr','nuv_mag', 'nuv_magerr', 
@@ -25,7 +30,7 @@ ordered_keys = ['name','num','ra','dec', 'redshift','Rmag','RT', 'RV','eRV','Nsp
                 'FLUX_RADIUS', 'EXTINCTION_u','EXTINCTION_g','EXTINCTION_r', 'EXTINCTION_i',]
 
 #---------------
-class Fors2DataAcess(object):
+class Fors2DataAcessOld(object):
     def __init__(self,filename):
         if os.path.isfile(filename):
             self.hf = h5py.File(filename, 'r')
@@ -119,6 +124,124 @@ class Fors2DataAcess(object):
         
         
            
+def ConvertFlambda_to_Fnu(wl, flambda):
+    """
+    Convert spectra density flambda to fnu.
+    parameters:
+        - Flambda : flux density in erg/s/cm2 /AA or W/cm2/AA
+
+    return
+         - Fnu : flux density in erg/s/cm2/Hz or W/cm2/Hz
+
+
+    Compute Fnu = wl**2/c Flambda
+    check the conversion units with astropy units and constants 
+    
+    """
+    
+    fnu = (flambda*U_FL*(wl*u.AA)**2/const.c).to(U_FNU)/(1*U_FNU)
+    #fnu = (flambda* (u.erg / (u.cm**2 * u.s * u.AA)) *(wl*u.AA)**2/const.c).to( u.erg / (u.cm**2 * u.s * u.Hz))/(u.erg / (u.cm**2 * u.s * u.Hz))
+    
+    return fnu
+
+   
+def flux_norm(wl,fl,wlcenter=6231):
+    lambda_red = wlcenter
+    lambda_width = 50
+    lambda_sel_min = lambda_red-lambda_width /2.
+    lambda_sel_max = lambda_red+lambda_width /2.  
+
+    idx_wl_sel = np.where(np.logical_and(wl>= lambda_sel_min,wl<= lambda_sel_max))[0]
+    flarr_norm = fl[idx_wl_sel]
+    return np.median(flarr_norm)
+
+class Fors2DataAcess(object):
+    def __init__(self,filename):
+        if os.path.isfile(filename):
+            self.hf = h5py.File(filename, 'r')
+            self.list_of_groupkeys = list(self.hf.keys())      
+             # pick one key    
+            key_sel =  self.list_of_groupkeys[0]
+            # pick one group
+            group = self.hf.get(key_sel)  
+            #pickup all attribute names
+            self.list_of_subgroup_keys = []
+            for k in group.attrs.keys():
+                self.list_of_subgroup_keys.append(k)
+        else:
+            self.hf = None
+            self.list_of_groupkeys = []
+            self.list_of_subgroup_keys = []
+    def close_file(self):
+        self.hf.close() 
+        
+    def get_list_of_groupkeys(self):
+        return self.list_of_groupkeys 
+    def get_list_subgroup_keys(self):
+        return self.list_of_subgroup_keys
+    def getattribdata_fromgroup(self,groupname):
+        attr_dict = OrderedDict()
+        if groupname in self.list_of_groupkeys:       
+            group = self.hf.get(groupname)  
+            for  nameval in self.list_of_subgroup_keys:
+                attr_dict[nameval] = group.attrs[nameval]
+        else:
+            print(f'getattribdata_fromgroup : No group {groupname}')
+        return attr_dict
+    def getspectrum_fromgroup(self,groupname):
+        spec_dict = {}
+        if groupname in self.list_of_groupkeys:       
+            group = self.hf.get(groupname)  
+            wl = np.array(group.get("wl"))
+            fl = np.array(group.get("fl")) 
+            spec_dict["wl"] = wl
+            spec_dict["fl"] = fl
+
+            #convert to fnu
+            fnu = ConvertFlambda_to_Fnu(wl, fl)
+            fnorm = flux_norm(wl,fnu)
+            spec_dict["fnu"] = fnu/fnorm
+            
+            
+        else:
+            print(f'getspectrum_fromgroup : No group {groupname}')
+        return spec_dict
+    
+    #kernel = kernels.RBF(0.5, (8000, 10000.0))
+    #gp = GaussianProcessRegressor(kernel=kernel ,random_state=0)
+
+    def getspectrumcleanedemissionlines_fromgroup(self,groupname,gp,nsigs=8):
+        spec_dict = {}
+        if groupname in self.list_of_groupkeys:       
+            group = self.hf.get(groupname)  
+            wl = np.array(group.get("wl"))
+            fl = np.array(group.get("fl")) 
+
+            #convert to fnu
+            fnu = ConvertFlambda_to_Fnu(wl, fl)
+            fnorm = flux_norm(wl,fnu)
+            
+            
+           
+            # fit gaussian pricess 
+            X = wl
+            Y = fnu/fnorm
+            
+            DeltaY = Y - gp.predict(X[:, None], return_std=False)
+            background = np.sqrt(np.median(DeltaY**2))
+            indexes_toremove = np.where(np.abs(DeltaY)> nsigs * background)[0]
+            
+            Xclean = np.delete(X,indexes_toremove)
+            Yclean  = np.delete(Y,indexes_toremove)
+            
+            spec_dict["wl"] = Xclean
+            spec_dict["fnu"] = Yclean
+    
+            
+        else:
+            print(f'getspectrum_fromgroup : No group {groupname}')
+        return spec_dict
+        
          
 
 # --------------
@@ -399,12 +522,13 @@ def build_obs(**kwargs):
         
         print("build_obs:: obs_wavelength = ",obs['wavelength'])
         
-        flambda = spectr["fl"]
-        fnu = flambda*spectr["wl"]**2/3e8*4.15  # convert into maggies : Janskies divided by 3631
+        #flambda = spectr["fl"]
+        #fnu = flambda*spectr["wl"]**2/3e8*4.15  # convert into maggies : Janskies divided by 3631
+        fnu = spectr["fnu"]
+
+        obs['spectrum'] = fnu*10**(-0.4*mags[4])  # put calib factor relative to magntude in red filter
         
-        obs['spectrum'] = spectr["fl"]*spectr["wl"]**2/3e8*4.15  # not sure at all of which flabda or fnu or lambda flambda
-        
-        obs['unc'] = spectr["bg"]*spectr["wl"]**2/3e8*4.15 
+        obs['unc'] = spectr["bg"]*10**(-0.4*mags[4])
         # (again, to ignore a particular wavelength set the value of the 
         #  corresponding element of the mask to *False*)
        
@@ -515,6 +639,7 @@ if __name__ == '__main__':
 
     attrs = fors2.getattribdata_fromgroup(object_name)
     spectr = fors2.getspectrumcleanedemissionlines_fromgroup(object_name,gp,nsigs=args.specnsigs)
+
     df_info = pd.DataFrame(columns=list_of_attributes)
     df_info.loc[0] = [*attrs.values()] # hope the order of attributes is kept
     df_info = df_info[ordered_keys]
