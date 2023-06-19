@@ -30,98 +30,7 @@ ordered_keys = ['name','num','ra','dec', 'redshift','Rmag','RT', 'RV','eRV','Nsp
                 'FLUX_RADIUS', 'EXTINCTION_u','EXTINCTION_g','EXTINCTION_r', 'EXTINCTION_i',]
 
 #---------------
-class Fors2DataAcessOld(object):
-    def __init__(self,filename):
-        if os.path.isfile(filename):
-            self.hf = h5py.File(filename, 'r')
-            self.list_of_groupkeys = list(self.hf.keys())      
-             # pick one key    
-            key_sel =  self.list_of_groupkeys[0]
-            # pick one group
-            group = self.hf.get(key_sel)  
-            #pickup all attribute names
-            self.list_of_subgroup_keys = []
-            for k in group.attrs.keys():
-                self.list_of_subgroup_keys.append(k)
-        else:
-            self.hf = None
-            self.list_of_groupkeys = []
-            self.list_of_subgroup_keys = []
-            
-        self.background = 0
-        
-    def close_file(self):
-        self.hf.close() 
-    def get_background(self):
-        return self.background 
-        
-    def get_list_of_groupkeys(self):
-        return self.list_of_groupkeys 
-    def get_list_subgroup_keys(self):
-        return self.list_of_subgroup_keys
-    def getattribdata_fromgroup(self,groupname):
-        attr_dict = OrderedDict()
-        if groupname in self.list_of_groupkeys:       
-            group = self.hf.get(groupname)  
-            for  nameval in self.list_of_subgroup_keys:
-                attr_dict[nameval] = group.attrs[nameval]
-        else:
-            print(f'getattribdata_fromgroup : No group {groupname}')
-        return attr_dict
-    def getspectrum_fromgroup(self,groupname):
-        spec_dict = {}
-        if groupname in self.list_of_groupkeys:       
-            group = self.hf.get(groupname)  
-            wl = np.array(group.get("wl"))
-            fl = np.array(group.get("fl")) 
-            spec_dict["wl"] = wl
-            spec_dict["fl"] = fl
-        else:
-            print(f'getspectrum_fromgroup : No group {groupname}')
-        return spec_dict
-    
-    #kernel = kernels.RBF(0.5, (8000, 10000.0))
-    #gp = GaussianProcessRegressor(kernel=kernel ,random_state=0)
 
-    def getspectrumcleanedemissionlines_fromgroup(self,groupname,gp,nsigs=8):
-        spec_dict = {}
-        if groupname in self.list_of_groupkeys:       
-            group = self.hf.get(groupname)  
-            wl = np.array(group.get("wl"))
-            fl = np.array(group.get("fl")) 
-            # fit gaussian pricess 
-            X = wl
-            Y = fl
-            
-            DeltaY = Y - gp.predict(X[:, None], return_std=False)
-            background = np.sqrt(np.median(DeltaY**2))
-            self.background = background
-            
-            
-            Z = np.where(np.abs(DeltaY)<background,np.abs(DeltaY),background)
-            
-            
-            
-            indexes_toremove = np.where(np.abs(DeltaY)> nsigs * background)[0]
-            
-            Xclean = np.delete(X,indexes_toremove)
-            Yclean  = np.delete(Y,indexes_toremove)
-            Zclean  = np.delete(Z,indexes_toremove)
-            
-            spec_dict["wl"] = Xclean
-            spec_dict["fl"] = Yclean
-            spec_dict["bg"] = Zclean
-
-            #remove negatives
-            bad_indexes = np.where(Yclean<=0)[0]
-            spec_dict["wl"] = np.delete(Xclean,  bad_indexes)
-            spec_dict["fl"] = np.delete(Yclean,  bad_indexes)
-            spec_dict["bg"] = np.delete(Zclean,  bad_indexes)
-            
-        else:
-            print(f'getspectrum_fromgroup : No group {groupname}')
-        return spec_dict
-        
         
            
 def ConvertFlambda_to_Fnu(wl, flambda):
@@ -145,9 +54,9 @@ def ConvertFlambda_to_Fnu(wl, flambda):
     return fnu
 
    
-def flux_norm(wl,fl,wlcenter=6231):
+def flux_norm(wl,fl,wlcenter=6231,wlwdt=50):
     lambda_red = wlcenter
-    lambda_width = 50
+    lambda_width = wlwdt
     lambda_sel_min = lambda_red-lambda_width /2.
     lambda_sel_max = lambda_red+lambda_width /2.  
 
