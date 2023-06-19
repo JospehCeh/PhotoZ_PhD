@@ -136,16 +136,20 @@ class Fors2DataAcess(object):
             X = wl
             Y = fnu/fnorm
             
-            DeltaY = Y - gp.predict(X[:, None], return_std=False)
+            DeltaY,Z = Y - gp.predict(X[:, None], return_std=True)
             background = np.sqrt(np.median(DeltaY**2))
-            indexes_toremove = np.where(np.abs(DeltaY)> nsigs * background)[0]
+            #indexes_toremove = np.where(np.abs(DeltaY)> nsigs * background)[0]
+            indexes_toremove = np.where(np.logical_or(np.abs(DeltaY)> nsigs * background,Y<=0))[0]
             
             Xclean = np.delete(X,indexes_toremove)
             Yclean  = np.delete(Y,indexes_toremove)
+            Zclean  = np.delete(Z,indexes_toremove)
             
             spec_dict["wl"] = Xclean
             spec_dict["fnu"] = Yclean
-    
+            spec_dict["bg"] = np.abs(Zclean) # strange scikit learn bug returning negative std.
+            spec_dict["bg_med"] = background # overestimated median error
+        
             
         else:
             print(f'getspectrum_fromgroup : No group {groupname}')
