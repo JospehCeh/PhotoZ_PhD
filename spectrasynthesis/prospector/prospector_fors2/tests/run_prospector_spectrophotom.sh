@@ -2,7 +2,7 @@
 
 #conda activate prospector
 
-ID=411
+ID=560
 
 echo "proceed SPEC ${ID} for spectrophotom"
 

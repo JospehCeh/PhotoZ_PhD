@@ -439,10 +439,15 @@ def build_obs(**kwargs):
         #flambda = spectr["fl"]
         #fnu = flambda*spectr["wl"]**2/3e8*4.15  # convert into maggies : Janskies divided by 3631
         fnu = spectr["fnu"]
+        
+        #renormalize fnu
+        w0_r = obs["phot_wave"][4]
+        fnu0 = np.interp(w0_r, obs["wavelength"],fnu)
+        fnu = fnu/fnu0
 
         obs['spectrum'] = fnu*10**(-0.4*mags[4])  # put calib factor relative to magntude in red filter
         
-        obs['unc'] = spectr["bg"]*10**(-0.4*mags[4])
+        obs['unc'] = spectr["bg"]*10**(-0.4*mags[4])/fnu0
         # (again, to ignore a particular wavelength set the value of the 
         #  corresponding element of the mask to *False*)
        
