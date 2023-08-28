@@ -15,3 +15,6 @@
 	path = EmuLP
 	url = git@github.com:JospehCeh/EmuLP.git
 	branch = u/joseph
+[submodule "fsps"]
+	path = fsps
+	url = https://github.com/cconroy20/fsps
