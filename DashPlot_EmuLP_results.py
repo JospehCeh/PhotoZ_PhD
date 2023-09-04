@@ -70,8 +70,8 @@ gal_lgmet_table = np.linspace(-3, -2, gal_t_table.size)
 
 
 # Load EmuLP results
-df_res = pd.read_pickle('COSMOS2020-with-FORS2-HSC_only_results.pkl')
-with open('COSMOS2020-with-FORS2-HSC_only_results_dicts.pkl', 'rb') as handle:
+df_res = pd.read_pickle('COSMOS2020-with-FORS2-HSC_only-jax-CC_results.pkl')
+with open('COSMOS2020-with-FORS2-HSC_only-jax-CC_results_dicts.pkl', 'rb') as handle:
     results_dict=pickle.load(handle)
 keys = [key for key in results_dict.keys()]
 _ex_ = keys[0]
@@ -129,7 +129,30 @@ def display_graph(z, sfr, met, gal_id, mod_id, law, e_BV):
     fig = make_subplots(rows=2, cols=1, specs=[[{"secondary_y":False}], [{"secondary_y":True}]], shared_xaxes=False)
     
     # Graphe chi² de EmuLP
-    test_gal_df=pd.DataFrame(results_dict[gal_id])
+    
+    _dict_0 = results_dict[gal_id]
+    _zps = np.array([])
+    chi2s = np.array([])
+    modids = np.array([])
+    extlaws = np.array([])
+    ebvs = np.array([])
+
+    for i,mod in enumerate(_dict_0['mod id']):
+        for j, (ext, ebv) in enumerate(zip(_dict_0['ext law'], _dict_0['eBV'])):
+            _zps = np.append(_zps, _dict_0['zp'])
+            chi2s = np.append(chi2s, _dict_0['chi2'][i, j, :])
+            modids = np.append(modids, np.full(_dict_0['zp'].shape, mod))
+            extlaws = np.append(extlaws, np.full(_dict_0['zp'].shape, ext))
+            ebvs = np.append(ebvs, np.full(_dict_0['zp'].shape, ebv))
+
+    dict_0 = {}
+    dict_0['zp'] = _zps
+    dict_0['chi2'] = chi2s
+    dict_0['mod id'] = modids
+    dict_0['ext law'] = extlaws
+    dict_0['eBV'] = ebvs
+    
+    test_gal_df=pd.DataFrame(dict_0)
     _df_ebv = test_gal_df[(test_gal_df['eBV']==e_BV)*(test_gal_df['ext law']==law)]
     chi_arr_allMods = np.column_stack(\
                                       [_df_ebv[_df_ebv['mod id']==mod]['chi2'].values\
