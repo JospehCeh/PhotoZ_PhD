@@ -70,8 +70,8 @@ gal_lgmet_table = np.linspace(-3, -2, gal_t_table.size)
 
 
 # Load EmuLP results
-df_res = pd.read_pickle('COSMOS2020-with-FORS2-HSC_only-jax-CC_results.pkl')
-with open('COSMOS2020-with-FORS2-HSC_only-jax-CC_results_dicts.pkl', 'rb') as handle:
+df_res = pd.read_pickle('results_synthesis_COSMOS2020-with-FORS2-HSC_only-jax-CC-togglePriorTrue-opa.pkl')
+with open('COSMOS2020-with-FORS2-HSC_only-jax-CC-togglePriorTrue-opa_results_dicts.pkl', 'rb') as handle:
     results_dict=pickle.load(handle)
 keys = [key for key in results_dict.keys()]
 _ex_ = keys[0]
@@ -249,6 +249,8 @@ def display_graph(z, sfr, met, gal_id, mod_id, law, e_BV):
     fig.add_scatter(x=wls[_sel], y=-2.5*np.log10(sed_info.rest_sed[_sel]/AB_norm),\
                     row=2, col=1,\
                     mode='lines', line_color='black', secondary_y=True)
+                    
+    fig.update_layout(yaxis_range=[0., 1.], yaxis2_range=[18., 28.])
     
     return slid_z, slid_sfr, slid_met, fig
 
