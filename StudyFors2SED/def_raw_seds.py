@@ -89,28 +89,21 @@ blue   =   ['SPEC722', 'SPEC191', 'SPEC480', 'SPEC643', 'SPEC297', 'SPEC160', 'S
 #path_rootdir = "/Volumes/Backup2020/MacOSX/GitHub/LSST/fors2"
 #path_rootoutdir = "/Volumes/Backup2020/MacOSX/GitHub/LSST/PhotoZ_PhD/StudyFors2SED"
 
-# mac laptop
+# mac laptop old
 #path_rootdir ="/Users/dagoret/MacOSX/GitHub/LSST/fors2"
 #path_rootoutdir = "/Users/dagoret/MacOSX/GitHub/LSST/PhotoZ_PhD/StudyFors2SED"
 
-# emac lab
-#path_rootdir = "/Users/sylvie/MacOSX/GitHub/LSST/FORS2"
-#path_rootoutdir = "/Users/sylvie/MacOSX/GitHub/LSST/PhotoZ_PhD/StudyFors2SED"
+# mac laptop new 2024
+path_rootdir ="/Users/dagoret/MacOSX/GitHub/LSST"
+path_rootoutdir = "/Users/dagoret/MacOSX/GitHub/LSST/PhotoZ/PhotoZ_PhD/StudyFors2SED"
 
 
-# CCIN2P3
-path_rootdir = "/pbs/throng/lsst/users/dagoret/desc/StellarPopulationSynthesis/FORS2"
-path_rootoutdir = "/pbs/throng/lsst/users/dagoret/desc/StellarPopulationSynthesis/PhotoZ_PhD/StudyFors2SED"
-
-
-#keep relative paths
 filename_fits_catalog=path_rootdir + '/fors2/data/fors2_catalogue.fits'
 path_raw_jct=path_rootdir + "/fors2/seds/"
 cat = fits.open(filename_fits_catalog)[1]
 sl_path=path_rootoutdir+"/StudyFors2SED/sl04/"
 path_ana=path_rootoutdir+"/StudyFors2SED/"
 path_out_jct=path_rootoutdir + '/fors2out/seds/'
-path_out_sdc          = "./raw/"
 
 
 os.environ["EXT_LAW"] = 'HZ4' #prevot
@@ -411,64 +404,6 @@ class SED_eg(object):
       start=np.searchsorted(self.wave,bounds[0])
       stop=np.searchsorted(self.wave,bounds[1])      
       return self.flux[start:stop].mean()
-    
-    
-class SED_sdc(object):
-    """
-    Extract infos from catalogs and wavelength/flux from SPEC files tables (SPECXXn.txt)
-    """
-    def __init__(self,id,label=""):
-        z,lines,ra,dec=get_catalog_info(id,cat)
-        filename=path_raw_jct+'SPEC'+str(id)+'n.txt'
-        
-        self.d=np.loadtxt(filename, unpack=True)
-        
-        
-        #if (float(z)!=-1) :
-        #    self.wave_tmp=self.d[0]/(1.+z)
-        #else:
-        #    self.wave_tmp=self.d[0]*0.
-            
-        self.wave_tmp=self.d[0]    
-        self.flux_tmp=self.d[1]
-        self.mask=self.d[2]
-        
-        id_mask=np.where(self.mask==0)
-        
-        self.wave=self.wave_tmp[id_mask]
-        self.flux=self.flux_tmp[id_mask]      
-        self.label=label
-        self.z=z
-        self.lines=lines
-        self.ra=ra
-        self.dec=dec
-        
-    def get_scale(self,bounds=(4150,4250)):
-        start=np.searchsorted(self.wave,bounds[0])
-        stop=np.searchsorted(self.wave,bounds[1])
-        return self.flux[start:stop].mean()
-    
-    
-def fors2_sdc_NOSL():
-  lst=[]
-  list=glob.glob(path_raw_jct+'*.txt')
-  for f in list:
-    base=os.path.basename(f).split('.')[0]
-    id=base[4:-1]
-    #print(id)
-    spec=SED_sdc(id)
-    if (float(spec.z)!=-1) :
-      lst=np.append(lst,'SPEC'+id)
-      file_out=path_out_sdc+'SPEC'+str(id)+'_raw_sdc.txt'
-      h=open(file_out,'w')
-      x=spec.wave
-      y=spec.flux
-      for i in range(len(x)):
-        h.write("%f %f\n"%(float(x[i]),float(y[i])))
-      h.close()
-
-  return lst      
-    
       
 def get_catalog_info(spec, cat):
     try:
