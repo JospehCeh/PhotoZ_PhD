@@ -3,7 +3,7 @@
 - author : Sylvie Dagoret-Campagne
 - affiliation : IJCLab/IN2P3/CNRS
 - creation date : 2022-12-19
-- last update : 2023-05-23
+- last update : 2023-11-18
 - purpose :Study Fors2
 
 
@@ -56,10 +56,15 @@
 ## ExploreFors2_viewspectra1by1_raw_sdc.ipynb
 - View restframe unrestshifted spectra (original spectra)
 
-## convertSLspectratohdf5.ipynb
-- Convert SL spectra in h2 file (same in DeepLearning dir )
+## convertSLspectratohdf5.ipynb (deprecated)
+- Convert SL spectra in h5 file (same in DeepLearning dir )
 
+## convertSLspectratohdf5BigArray.ipynb 
+- Convert SL spectra in h5 file on a wavelength grid (limit in wl) for Deep Learning dir
+
+## convertSLspectratohdf5WLFPoints.ipynb
+- Convert SL spectra in h5 file but keep original wavelength spacing (*like for convertFors2spectratohdf5.ipynb* )
 
 ## convertFors2spectratohdf5.ipynb 
-- Convert Fors2 (original unredshifted spectra) in h2 file 
+- Convert Fors2 (original unredshifted spectra) in h5 file 
 
