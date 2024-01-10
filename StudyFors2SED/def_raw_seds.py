@@ -72,19 +72,16 @@ blue   =   ['SPEC722', 'SPEC191', 'SPEC480', 'SPEC643', 'SPEC297', 'SPEC160', 'S
 #path_out_jct='/home/enuss/00_labo/lsst/photoz/edmond_fors2/dataset_edmond/raw_SEDs/jct_redshifted/' #jct raw dat in SL format
 
 
-
 ### Joseph Config
 #filename_fits_catalog='/home/joseph/PhotoZ_PhD/fors2/data/fors2_catalogue.fits'
 #path_raw_jct='/home/joseph/PhotoZ_PhD/fors2/seds/'
 #cat = fits.open(filename_fits_catalog)[1]
-#sl_path='/home/joseph/WIP_FORS2/PhotoZ_PhD/StudyFors2SED/sl04/'
+#sl_path='/home/joseph/PhotoZ_PhD/StudyFors2SED/sl04/'
 #sl_path='/home/enuss/00_labo/lsst/photoz/sl04/'
 #path_ana='/home/enuss/00_labo/lsst/photoz/edmond_fors2/'
-#path_ana="/home/joseph/WIP_FORS2/PhotoZ_PhD/StudyFors2SED"
+#path_ana="/home/joseph/PhotoZ_PhD/StudyFors2SED"
 #path_out_jct='/home/enuss/00_labo/lsst/photoz/edmond_fors2/dataset_edmond/raw_SEDs/jct_redshifted/' #jct raw dat in SL format
-#path_out_jct='/home/joseph/WIP_FORS2/PhotoZ_PhD/StudyFors2SED/fors2out/seds/'
-
-
+#path_out_jct='/home/joseph/PhotoZ_PhD/StudyFors2SED/fors2out/seds/'
 
 
 ### Sylvie Config home
@@ -92,13 +89,13 @@ blue   =   ['SPEC722', 'SPEC191', 'SPEC480', 'SPEC643', 'SPEC297', 'SPEC160', 'S
 #path_rootdir = "/Volumes/Backup2020/MacOSX/GitHub/LSST/fors2"
 #path_rootoutdir = "/Volumes/Backup2020/MacOSX/GitHub/LSST/PhotoZ_PhD/StudyFors2SED"
 
-# mac laptop
-path_rootdir ="/Users/dagoret/MacOSX/GitHub/LSST/fors2"
-path_rootoutdir = "/Users/dagoret/MacOSX/GitHub/LSST/PhotoZ_PhD/StudyFors2SED"
+# mac laptop old
+#path_rootdir ="/Users/dagoret/MacOSX/GitHub/LSST/fors2"
+#path_rootoutdir = "/Users/dagoret/MacOSX/GitHub/LSST/PhotoZ_PhD/StudyFors2SED"
 
-
-
-
+# mac laptop new 2024
+path_rootdir ="/Users/dagoret/MacOSX/GitHub/LSST"
+path_rootoutdir = "/Users/dagoret/MacOSX/GitHub/LSST/PhotoZ/PhotoZ_PhD/StudyFors2SED"
 
 
 filename_fits_catalog=path_rootdir + '/fors2/data/fors2_catalogue.fits'
@@ -124,9 +121,9 @@ base_tag   =os.environ['BASE_TAG']
 plot_type  =os.environ['PLOT_TYPE']
 config_tag =os.environ['CONFIG_TAG']
 
-#
 #Joseph config
-#sl_path = "/home/joseph/WIP_FORS2/FORS2"
+#sl_path = "/home/joseph/WIP_FORS2/FORS2" or "/home/joseph/PhotoZ_PhD/fors2"
+
 #sylvie config
 sl_path=path_rootdir
 

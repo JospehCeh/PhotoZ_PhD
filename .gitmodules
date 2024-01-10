@@ -1,0 +1,15 @@
+[submodule "LEPHARE"]
+	path = LEPHARE
+	url = https://gitlab.lam.fr/Galaxies/LEPHARE.git
+[submodule "LEPHARELSST"]
+	path = LEPHARELSST
+	url = git@github.com:JospehCeh/LEPHARELSST.git
+[submodule "fors2"]
+	path = fors2
+	url = git@github.com:ericnuss/fors2.git
+[submodule "lephare_cosmos"]
+	path = lephare_cosmos
+	url = git@github.com:JospehCeh/lephare_cosmos.git
+[submodule "EmuLP"]
+	path = EmuLP
+	url = git@github.com:JospehCeh/EmuLP.git
