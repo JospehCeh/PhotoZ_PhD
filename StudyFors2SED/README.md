@@ -3,7 +3,7 @@
 - author : Sylvie Dagoret-Campagne
 - affiliation : IJCLab/IN2P3/CNRS
 - creation date : 2022-12-19
-- last update : 2023-03-20
+- last update : 2023-11-18
 - purpose :Study Fors2
 
 
@@ -11,18 +11,18 @@
 - creation 2022/12/22
 - view spectra of other datasets
 
-## ExploreFors2.ipynb 
+## ExploreFors2.ipynb (DEPRECATED)
 - first exploration of Fors2 spectra
 - mandatory to run this notebook first in order to create seds file in ./fors2out/seds (or use short version below)
 - don't forget to create the output directory StudyFors2SED/fors2out/seds before running
 
-## ExploreFors2_short.ipynb
+## ExploreFors2_short.ipynb (MUST RUN)
 - similar to ExploreFors2.ipynb, but using python script as the library
 - fitst exploration of Fors2 spectra with python script import
 - mandatory to run this notebook first in order to create seds file in ./fors2out/seds of used version above
 - don't forget to create the output directory StudyFors2SED/fors2out/seds before running
 
-## ExploreFors2inRestFrame.ipynb 
+## ExploreFors2inRestFrame.ipynb (DEPRECATED)
 - build an astropy table
 - Does nothing more
 
@@ -45,3 +45,26 @@
 
 ## ExploreFors2_viewspectra1by1_CompareSL_t.ipynb
 - Compare SL spectra with FORS2 spectra redshifted at z=0
+
+
+
+# preparation of spectrum synthesis
+
+## ExploreFors2inOriginalFrame.ipynb (MUST RUN)
+- prepare to use restframe unredshifted spectra (original spectra) and extract raw spectra inside a local dir ./raw
+
+## ExploreFors2_viewspectra1by1_raw_sdc.ipynb
+- View restframe unrestshifted spectra (original spectra)
+
+## convertSLspectratohdf5.ipynb (deprecated)
+- Convert SL spectra in h5 file (same in DeepLearning dir )
+
+## convertSLspectratohdf5BigArray.ipynb 
+- Convert SL spectra in h5 file on a wavelength grid (limit in wl) for Deep Learning dir
+
+## convertSLspectratohdf5WLFPoints.ipynb
+- Convert SL spectra in h5 file but keep original wavelength spacing (*like for convertFors2spectratohdf5.ipynb* )
+
+## convertFors2spectratohdf5.ipynb 
+- Convert Fors2 (original unredshifted spectra) in h5 file 
+
