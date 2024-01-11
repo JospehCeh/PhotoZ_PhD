@@ -16,7 +16,7 @@ from scipy.interpolate import interp1d
 from astropy.io import fits
 import glob
 import collections
-from def_raw_seds import *
+from .def_raw_seds import *
 #-----------------------------------------------------
 
 #noramlization for SL spectra:
