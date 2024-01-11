@@ -89,9 +89,15 @@ path_out_jct='/home/joseph/PhotoZ_PhD/StudyFors2SED/fors2out/seds/'
 #path_rootdir = "/Volumes/Backup2020/MacOSX/GitHub/LSST/fors2"
 #path_rootoutdir = "/Volumes/Backup2020/MacOSX/GitHub/LSST/PhotoZ_PhD/StudyFors2SED"
 
-# mac laptop
+
+# mac laptop old
 #path_rootdir ="/Users/dagoret/MacOSX/GitHub/LSST/fors2"
 #path_rootoutdir = "/Users/dagoret/MacOSX/GitHub/LSST/PhotoZ_PhD/StudyFors2SED"
+
+# mac laptop new 2024
+path_rootdir ="/Users/dagoret/MacOSX/GitHub/LSST"
+path_rootoutdir = "/Users/dagoret/MacOSX/GitHub/LSST/PhotoZ/PhotoZ_PhD/StudyFors2SED"
+
 
 #filename_fits_catalog=path_rootdir + '/fors2/data/fors2_catalogue.fits'
 #path_raw_jct=path_rootdir + "/fors2/seds/"
