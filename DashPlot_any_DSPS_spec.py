@@ -54,7 +54,7 @@ gal_sfr_table = np.random.uniform(0, 10, gal_t_table.size) # SFR in Msun/yr
 gal_lgmet = -2.0 # log10(Z)
 gal_lgmet_scatter = 0.2 # lognormal scatter in the metallicity distribution function
 
-gal_lgmet_table = np.linspace(-3, -2, gal_t_table.size)
+#gal_lgmet_table = np.linspace(-3, -2, gal_t_table.size)
 
 #z_obs = np.linspace(0.01, 3.01, 100)
 #t_obs = age_at_z(z_obs, *DEFAULT_COSMOLOGY) # age of the universe in Gyr at z_obs
@@ -77,8 +77,8 @@ app.layout = html.Div([
     html.P("Star Formation Rate"),
     html.Div([dcc.Slider( id='sfr-value', min=0., max=10., value=5, step=0.01, marks={0: '0', 1:'1', 2: '2', 3:'3', 4:'4', 5:'5', 6:'6', 7:'7', 8:'8', 9:'9', 10:'10'},\
                 tooltip={"placement":"bottom", "always_visible":True} )], id="SFR-slider"),
-    html.P("Metallicity"),
-    html.Div([dcc.Slider( id='met-value', min=2, max=3, value=2, step=0.001, marks={2: '2', 2.2:'2.2', 2.4:'2.4', 2.6:'2.6', 2.8:'2.8', 3:'3'},\
+    html.P("Log-metallicity"),
+    html.Div([dcc.Slider( id='met-value', min=-3, max=3, value=0, step=0.001, marks={-3: '-3', -2: '-2', -1: '-1', 0: '0', 1: '1', 2: '2', 3:'3'},\
                 tooltip={"placement":"bottom", "always_visible":True} )], id="met-slider")
 ])
 
@@ -89,7 +89,7 @@ def display_graph(z, sfr, met):
                       tooltip={"placement":"bottom", "always_visible":True} )
     slid_sfr = dcc.Slider( id='sfr-value', min=0., max=10., value=sfr, step=0.01, marks={0: '0', 1:'1', 2: '2', 3:'3', 4:'4', 5:'5', 6:'6', 7:'7', 8:'8', 9:'9', 10:'10'},\
                 tooltip={"placement":"bottom", "always_visible":True} )
-    slid_met = dcc.Slider( id='met-value', min=2, max=3, value=met, step=0.001, marks={2: '2', 2.2:'2.2', 2.4:'2.4', 2.6:'2.6', 2.8:'2.8', 3:'3'},\
+    slid_met = dcc.Slider( id='met-value', min=-3, max=3, value=met, step=0.001, marks={-3: '-3', -2: '-2', -1: '-1', 0: '0', 1: '1', 2: '2', 3:'3'},\
                 tooltip={"placement":"bottom", "always_visible":True} )
     fig = make_subplots(rows=1, cols=1, specs=[[{"secondary_y":True}]], shared_xaxes=True)
     
@@ -100,10 +100,10 @@ def display_graph(z, sfr, met):
     gal_t_table = np.linspace(t_obs-0.01, t_obs+0.01, 100) # age of the universe in Gyr
     gal_sfr_table = np.full(gal_t_table.size, sfr) # SFR in Msun/yr
 
-    gal_lgmet = -met # log10(Z)
+    gal_lgmet = met # log10(Z)
     gal_lgmet_scatter = 0.2 # lognormal scatter in the metallicity distribution function
 
-    gal_lgmet_table = np.linspace(-3, -2, gal_t_table.size)
+    #gal_lgmet_table = np.linspace(-3, -2, gal_t_table.size)
     
     sed_info = calc_rest_sed_sfh_table_lognormal_mdf(gal_t_table, gal_sfr_table, gal_lgmet, gal_lgmet_scatter,\
                                                      ssp_data.ssp_lgmet, ssp_data.ssp_lg_age_gyr, ssp_data.ssp_flux, t_obs)
