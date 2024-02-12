@@ -33,21 +33,18 @@ jax.config.update("jax_enable_x64", True)
 from interpax import interp1d
 
 from fors2tostellarpopsynthesis.filters import FilterInfo
-from fors2tostellarpopsynthesis.fitters.fitter_jaxopt import (lik_spec,\
-                                                              lik_mag,\
-                                                              lik_comb,\
-                                                              get_infos_spec,\
-                                                              get_infos_mag,\
-                                                              get_infos_comb)
 
 from fors2tostellarpopsynthesis.fitters.fitter_jaxopt import (SSP_DATA,\
                                                               TODAY_GYR,\
-                                                              mean_spectrum,\
-                                                              mean_mags,\
                                                               mean_sfr,\
-                                                              ssp_spectrum_fromparam)
+                                                              ssp_spectrum_fromparam,\
+                                                              mean_sfr_ageDepMet_Q,\
+                                                              ssp_spectrum_fromparam_ageDepMet_Q)
 
-from fors2tostellarpopsynthesis.parameters import SSPParametersFit, paramslist_to_dict
+from fors2tostellarpopsynthesis.parameters import (SSPParametersFit,\
+                                                   SSPParametersFitAgeDepMet,\
+                                                   SSPParametersFit_AgeDepMet_Q,\
+                                                   paramslist_to_dict)
 from diffstar import sfh_singlegal
 
 #get_ipython().run_line_magic('matplotlib', 'inline')
@@ -80,79 +77,17 @@ lsst_cols = ['purple', 'blue', 'green', 'yellow', 'red', 'grey']
 
 
 # Initial parameters for SPS
-p = SSPParametersFit()
+p = SSPParametersFit_AgeDepMet_Q()
 init_params = p.INIT_PARAMS
 params_min = p.PARAMS_MIN
 params_max = p.PARAMS_MAX
 
-params = {"MAH_lgmO":init_params[0],
-          "MAH_logtc":init_params[1],
-          "MAH_early_index":init_params[2],
-          "MAH_late_index": init_params[3],
-
-          "MS_lgmcrit":init_params[4],
-          "MS_lgy_at_mcrit":init_params[5],
-          "MS_indx_lo":init_params[6],
-          "MS_indx_hi":init_params[7],
-          "MS_tau_dep":init_params[8],
-
-          "Q_lg_qt":init_params[9],
-          "Q_qlglgdt":init_params[10],
-          "Q_lg_drop":init_params[11],
-          "Q_lg_rejuv":init_params[12],
-
-          "AV":init_params[13],
-          "UV_BUMP":init_params[14],
-          "PLAW_SLOPE":init_params[15],
-          "SCALEF":init_params[16]
-         }
-
-min_params = {"MAH_lgmO":params_min[0],
-              "MAH_logtc":params_min[1],
-              "MAH_early_index":params_min[2],
-              "MAH_late_index": params_min[3],
-
-              "MS_lgmcrit":params_min[4],
-              "MS_lgy_at_mcrit":params_min[5],
-              "MS_indx_lo":params_min[6],
-              "MS_indx_hi":params_min[7],
-              "MS_tau_dep":params_min[8],
-
-              "Q_lg_qt":params_min[9],
-              "Q_qlglgdt":params_min[10],
-              "Q_lg_drop":params_min[11],
-              "Q_lg_rejuv":params_min[12],
-
-              "AV":params_min[13],
-              "UV_BUMP":params_min[14],
-              "PLAW_SLOPE":params_min[15],
-              "SCALEF":params_min[16]
-         }
-
-max_params = {"MAH_lgmO":params_max[0],
-              "MAH_logtc":params_max[1],
-              "MAH_early_index":params_max[2],
-              "MAH_late_index": params_max[3],
-
-              "MS_lgmcrit":params_max[4],
-              "MS_lgy_at_mcrit":params_max[5],
-              "MS_indx_lo":params_max[6],
-              "MS_indx_hi":params_max[7],
-              "MS_tau_dep":params_max[8],
-
-              "Q_lg_qt":params_max[9],
-              "Q_qlglgdt":params_max[10],
-              "Q_lg_drop":params_max[11],
-              "Q_lg_rejuv":params_max[12],
-
-              "AV":params_max[13],
-              "UV_BUMP":params_max[14],
-              "PLAW_SLOPE":params_max[15],
-              "SCALEF":params_max[16]
-         }
+params = {name:init_params[k] for k, name in enumerate(p.PARAM_NAMES_FLAT)}
+min_params = {name:params_min[k] for k, name in enumerate(p.PARAM_NAMES_FLAT)}
+max_params = {name:params_max[k] for k, name in enumerate(p.PARAM_NAMES_FLAT)}
 
 @jit
-def ssp_spectrum_fromparam_met(params, z_obs, met):
+def ssp_spectrum_fromparam_fullSFH(params, z_obs):
     """ Return the SED of SSP DSPS with original wavelength range wihout and with dust
 
     :param params: parameters for the fit
@@ -186,26 +121,26 @@ def ssp_spectrum_fromparam_met(params, z_obs, met):
     Q_lg_rejuv = params["Q_lg_rejuv"]
     list_param_q = [Q_lg_qt, Q_qlglgdt,Q_lg_drop,Q_lg_rejuv]
 
+    # compute SFR
+    tarr = np.linspace(0.1, TODAY_GYR, 100)
+    sfh_gal = sfh_singlegal(tarr, list_param_mah , list_param_ms, list_param_q)
+    
+    # Dust
     Av = params["AV"]
     uv_bump = params["UV_BUMP"]
     plaw_slope = params["PLAW_SLOPE"]
     list_param_dust = [Av,uv_bump,plaw_slope]
 
-    # compute SFR
-    tarr = np.linspace(0.1, TODAY_GYR, 100)
-    sfh_gal = sfh_singlegal(
-    tarr, list_param_mah , list_param_ms, list_param_q)
-
     # metallicity
-    gal_lgmet = met # log10(Z)
-    gal_lgmet_scatter = 0.2 # lognormal scatter in the metallicity distribution function
+    gal_lgmet = params["LGMET"] # log10(Z)
+    gal_lgmet_scatter = params["LGMETSCATTER"]  # lognormal scatter in the metallicity distribution function
 
     # need age of universe when the light was emitted
     t_obs = age_at_z(z_obs, *DEFAULT_COSMOLOGY) # age of the universe in Gyr at z_obs
     t_obs = t_obs[0] # age_at_z function returns an array, but SED functions accept a float for this argument
 
     # clear sfh in future
-    sfh_gal = jnp.where(tarr<t_obs, sfh_gal, 0)
+    #sfh_gal = jnp.where(tarr<t_obs, sfh_gal, 0)
 
     # compute the SED_info object
     gal_t_table = tarr
@@ -225,18 +160,16 @@ def ssp_spectrum_fromparam_met(params, z_obs, met):
     return SSP_DATA.ssp_wave, sed_info.rest_sed, sed_attenuated
 
 
-
-
 # Dash app layout
 app = Dash()
 
 layout_SPS = []
 for _par in params.keys():
-    _mrk = { _v: f"{_v:.2f}" for _v in np.linspace(min_params[_par], max_params[_par], 10) }
+    _mrk = { _v: f"{_v:.2f}" for _v in np.linspace(min_params[_par], max_params[_par], 5) }
     layout_SPS.append(html.Div([html.P(_par),\
                                 html.Div([dcc.Slider(id=_par+'-value',\
                                                      min=min_params[_par], max=max_params[_par], value=params[_par],\
-                                                     step=abs(max_params[_par]-min_params[_par])/100,\
+                                                     step=abs(max_params[_par]-min_params[_par])/10,\
                                                      marks=_mrk,\
                                                      tooltip={"placement":"bottom", "always_visible":True} )],\
                                          id=_par+"-slider")],\
@@ -258,41 +191,28 @@ app.layout = html.Div([\
                                                       tooltip={"placement":"bottom", "always_visible":True} )],\
                                           id="z-slider")],\
                                  style={'width': '25%', 'display': 'inline-block'}\
-                                ),
-                       html.Div([html.P("Log-metallicity"),\
-                                 html.Div([dcc.Slider(id='met-value', min=-3, max=3, value=0, step=0.001,\
-                                                      marks={-3: '-3', -2: '-2', -1: '-1', 0: '0', 1: '1', 2: '2', 3:'3'},\
-                                                      tooltip={"placement":"bottom", "always_visible":True} )],\
-                                          id="met-slider")],\
-                                 style={'width': '25%', 'display': 'inline-block'}\
                                 )
                       ]+layout_SPS)
 
 # Dash app run
-@app.callback([Output("z-slider", "children"),\
-               Output("met-slider", "children")] + [Output(_par+"-slider", "children")\
+@app.callback([Output("z-slider", "children")] + [Output(_par+"-slider", "children")\
                                                     for _par in params.keys()] + [Output("SED", "figure"),\
                                                                                   Output("SFR", "figure")],\
-              [Input("redshift-value", "value"),\
-               Input("met-value", "value")] + [Input(_par+"-value", "value")\
+              [Input("redshift-value", "value")] + [Input(_par+"-value", "value")\
                                                for _par in params.keys()]\
              )
-def display_graph(z, met, *sps_params):
+def display_graph(z, *sps_params):
     slid_z = dcc.Slider(id='redshift-value', min=0., max=3., value=z, step=0.001,\
                         marks={0: '0', 0.5:'0.5', 1:'1', 1.5:'1.5', 2: '2', 2.5:'2.5', 3:'3'},\
                         tooltip={"placement":"bottom", "always_visible":True}\
                        )
-    slid_met = dcc.Slider(id='met-value', min=-3, max=3, value=met, step=0.001,\
-                          marks={-3: '-3', -2: '-2', -1: '-1', 0: '0', 1: '1', 2: '2', 3:'3'},\
-                          tooltip={"placement":"bottom", "always_visible":True}\
-                         )
     
     return_slids = []
     for _par, _par_val in zip(params.keys(), sps_params):
-        _mrk = { _v: f"{_v:.2f}" for _v in np.linspace(min_params[_par], max_params[_par], 10) }
+        _mrk = { _v: f"{_v:.2f}" for _v in np.linspace(min_params[_par], max_params[_par], 5) }
         return_slids.append(dcc.Slider(id=_par+'-value',\
                                        min=min_params[_par], max=max_params[_par], value=_par_val,\
-                                       step=abs(max_params[_par]-min_params[_par])/100,\
+                                       step=abs(max_params[_par]-min_params[_par])/10,\
                                        marks=_mrk,\
                                        tooltip={"placement":"bottom", "always_visible":True} )\
                            )
@@ -302,7 +222,7 @@ def display_graph(z, met, *sps_params):
     
     param_dict = {_p:_v for _p, _v in zip(params.keys(), sps_params)}
     
-    sps_wls, sps_rest_sed, sps_attenuated_sed = ssp_spectrum_fromparam_met(param_dict, z, met)
+    sps_wls, sps_rest_sed, sps_attenuated_sed = ssp_spectrum_fromparam_ageDepMet_Q(param_dict, z)
     
     obs_mags = np.array([ calc_obs_mag(sps_wls, sps_attenuated_sed, filt.wave, filt.transmission,\
                                        z, *DEFAULT_COSMOLOGY) for filt in lsst_filters ])
@@ -324,10 +244,11 @@ def display_graph(z, met, *sps_params):
                         mode='lines', line_color='blue',\
                         secondary_y=True)
     #sed_fig.update_layout(yaxis2_type="log")
-    tarr, sfh_gal = mean_sfr(param_dict, z)
+    t_obs, tarr, sfh_gal = mean_sfr_ageDepMet_Q(param_dict, z)
     sfr_fig.add_scatter(x=tarr, y=sfh_gal, mode='lines', line_color='black')
+    sfr_fig.add_vline(x=t_obs, line_width=2, line_dash="dash", line_color="orange")
     
-    return (slid_z, slid_met, *return_slids, sed_fig, sfr_fig)
+    return (slid_z, *return_slids, sed_fig, sfr_fig)
 
 if __name__ == '__main__':
     app.run_server(debug=False)
